@@ -1,0 +1,147 @@
+#include<stdio.h>
+#include<stdlib.h>
+int main()
+{
+
+	FILE *fp;
+	char s2[10];
+	char row_att[500],s1[700];
+	int i=0,j=0;
+	int num_row=0,num_col=60;
+	int att,a;
+	///// get num row ///////////////////////////
+	//fp = fopen("../../BCI_word/train_split/test.csv","r");
+	//fp = fopen("../../BCI_word/train_split/test2.csv","r");
+	fp = fopen("../../BCI_word/train_split/S02_Sess01_FB001.csv","r");
+	if (fp == NULL) {
+		printf("Error");
+	}
+
+	char c;
+	for (c = getc(fp); c != EOF; c = getc(fp))
+		if (c == '\n') // Increment count if this character is newline
+			num_row++;
+	printf("num of row : %d\n",num_row);
+	fclose(fp);
+	///// ///////////////////////////////////////
+
+	//fp = fopen("../../BCI_word/train_split/test.csv","r");
+	//fp = fopen("../../BCI_word/train_split/test2.csv","r");
+	fp = fopen("../../BCI_word/train_split/S02_Sess01_FB001.csv","r");
+	if (fp == NULL) {
+		printf("Error");
+	}
+
+	/*Calloc and set = 0*/
+	double *x[1];
+	double *y[56];
+	int k=0;
+	int rang_h=28;
+	x[0] = (double*)calloc(num_col*(num_row+(rang_h-1)),sizeof(double));
+	for(k=0; k<num_col*(num_row+(rang_h-1));k++)
+	{
+			x[0][k] = 0;
+	}
+	for(j=0;j<54;j++)
+	{
+		y[j] = (double*)calloc((num_row-1)+(rang_h-1),sizeof(double));
+		
+		for(k=0;k<(num_row-1)+(rang_h-1);k++)
+		{
+			y[j][k] = 0;
+		}
+	}
+
+	double h[28] = {0.0097362440085623485,0.013687152003616806,0.0086598566942656593,0.010107906049923423,0.011567164460922022,0.013001162923617181,0.014388273966865671,0.015685605866716749,0.016856816862759815,0.017894187091944333,0.018757543865330663,0.019421678991148002,0.019876744992742834,0.020110283590889164,0.020110283590889164,0.019876744992742834,0.019421678991148002,0.018757543865330663,0.017894187091944333,0.016856816862759815,0.015685605866716749,0.014388273966865671,0.013001162923617181,0.011567164460922022,0.010107906049923423,0.0086598566942656593,0.013687152003616806,0.0097362440085623485};
+	//double h[28] =  {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+	printf("h[0] : %lf\nh[27] : %lf\n",h[0],h[2]);
+	
+	/* read attribute */
+	fscanf(fp,"%s",row_att);
+	printf("row_att : %s\n",row_att);
+
+	/*collect data*/
+	fscanf(fp,"%[^,],",s2);
+	printf("ans s[0]: %s\n",s2);
+
+	for(i=1;i<(num_row)*num_col;i++)
+	{
+		if((i%num_col) == 0)
+		{
+			fscanf(fp,"%[^,],",s2);
+			printf("ans s[0]: %s\n",s2);
+		}else
+		{
+			fscanf(fp,"%lf,",&x[0][i]);
+			//if(i>570000)
+				//printf("i: %d || x[0][%d] : %lf\n",i,i,x[0][i]);
+		}
+
+		//printf("i: %d || x[0][%d] : %lf\n",i,i,x[0][i]);
+		/*
+		if(i<125)
+		{
+		if(i%num_col == 0 && i !=0)
+		{
+		printf("i : %d || :x[0][%d] : %lf\n",i-2,i-2,x[0][i-2]);
+		printf("i : %d || :x[0][%d] : %lf\n",i-1,i-1,x[0][i-1]);
+		printf("i : %d || :x[0][%d] : %lf\n",i,i,x[0][i]);
+		}
+		}
+		*/
+		/*
+		if((i%100000==0)&&(i!=0))
+		{
+		printf("i : %d\n",i);
+		printf("i-2: %d || x[0][%d] : %lf\n",i-2,i-2,x[0][i-2]);
+		printf("i-1: %d || x[0][%d] : %lf\n",i-1,i-1,x[0][i-1]);
+		printf("i  : %d || x[0][%d] : %lf\n",i,i,x[0][i]);
+		}*/
+	}
+	
+	///////////////////////////////////
+
+	/* convolution */
+	int tem,h_num;
+	for(a=0;a<54;a++)
+	{
+		//-1
+		for(i=0;i<((num_row+rang_h)-1);i++)
+		{
+			for(j=i,h_num=0,tem=0;(tem<rang_h)&&(j>=0);j--,tem++,h_num++)
+			{
+				//printf("num_col = %d | j = %d \n",num_col,j);
+				y[a][i] += h[h_num]*x[0][(num_col*j)+(a+2)];
+				//printf("j : %d || h[%d] : %lf || ",j,h_num,h[h_num]);
+				//printf(" x[0][%d] : %lf\n",(num_col*j)+2,x[0][(num_col*j)+2]);
+				//if(a == 0&&i<100)
+				//{
+					//printf("h[%d]*x[0][(%d*%d) + %d +2](%d) == %lf*%lf == %lf\n",h_num,num_col,j,a,num_col*j+a+2,h[h_num],x[0][(num_col*j)+(a+2)],h[h_num]*x[0][(num_col*j)+(a+2)]);	
+					//printf("i : %d || y[%d][%d] : %lf\n",i,a,i,y[a][num_col*j+a+2]);
+					//printf("i : %d || y[%d][%d] : %lf\n",i,a,i,y[a][i]);
+				//}
+				//printf("i : %d || y[%d][%d] : %lf\n",i,a,i,y[a][i]);
+			}
+			if( a == 0&& i>9600 && i<(num_row+rang_h-1))
+			{
+				printf("i : %d || y[%d][%d] : %lf\n",i,a,i,y[a][i]);
+			}
+		}
+	}
+	//printf("i : %d || y[%d][%d] : %lf\n",11,5,11,y[0][9626]);
+
+	printf("num_row : %d",num_row);
+	free(x[0]);
+	for(i=0;i<54;i++)
+		free(y[i]);
+	fclose(fp);
+	getchar();
+	return 0;
+}
+
+
+
+
+
+
+
